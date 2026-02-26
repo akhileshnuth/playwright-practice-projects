@@ -1,58 +1,48 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page, type Dialog } from '@playwright/test';
+
+const VALID_USERNAME = 'mngr653719';
+const VALID_PASSWORD = 'Unajaty';
+
+const INVALID_USERNAME = 'akhil@1234';
+const INVALID_PASSWORD = '@123456';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('https://demo.guru99.com');
-  
-  await page.getByText('Bank Project').click();
+  await expect(page.locator("//a[text()='Demo Site']")).toBeVisible();
+  await page.locator("//a[text()='Bank Project']").click();
 });
 
+async function login(page: Page, username: string, password: string) {
 
-// valid username and password
-test('Login with valid username and password', async ({ page }) => {
+  await page.locator("//input[@name='uid']").fill(username);
+  await page.locator("//input[@name='password']").fill(password);
+  await page.locator("//input[@name='btnLogin']").click();
+}
 
-  await page.locator('[name="uid"]').fill('mngr653719');
-  await page.locator('[name="password"]').fill('Unajaty');
+async function expectInvalidLoginAlert(page: Page) {
+  page.once('dialog', async (dialog: Dialog) => {
+    expect(dialog.message().toLowerCase()).toContain('not valid');
+    await dialog.accept();
+  });
+}
 
-  await page.locator('[name="btnLogin"]').click();
-
-  // successful login
+test('Login with valid username and valid password', async ({ page }) => {
+  await login(page, VALID_USERNAME, VALID_PASSWORD);
+  await expect(page.locator("xpath=//marquee[@class='heading3']")).toBeVisible();
   await expect(page).toHaveURL(/Managerhomepage/);
-
 });
 
-
-// Invalid username and valid password
 test('Login with invalid username and valid password', async ({ page }) => {
-
-  await page.locator('[name="uid"]').fill('akhil@1234');
-  await page.locator('[name="password"]').fill('Unajaty');
-
-  // Expected login page
-  await expect(page).toHaveURL(/index.php/);
-
+  await expectInvalidLoginAlert(page);
+  await login(page, INVALID_USERNAME, VALID_PASSWORD);
 });
 
-
-// valid username and invalid password
 test('Login with valid username and invalid password', async ({ page }) => {
-
-  await page.locator('[name="uid"]').fill('mngr653719');
-  await page.locator('[name="password"]').fill('@123456');
-
-  await page.locator('[name="btnLogin"]').click();
-
-  await expect(page).toHaveURL(/index.php/);
+  await expectInvalidLoginAlert(page);
+  await login(page, VALID_USERNAME, INVALID_PASSWORD);
 });
 
-
-// Invalid username and invalid password
 test('Login with invalid username and invalid password', async ({ page }) => {
-
-  await page.locator('[name="uid"]').fill('akhi1234');
-  await page.locator('[name="password"]').fill('@123456');
-
-  await page.locator('[name="btnLogin"]').click();
-
-  await expect(page).toHaveURL(/index.php/)
-
+  await expectInvalidLoginAlert(page);
+  await login(page, INVALID_USERNAME, INVALID_PASSWORD);
 });
