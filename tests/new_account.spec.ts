@@ -2,41 +2,41 @@ import { test, expect, type Page } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('https://demo.guru99.com/V1/index.php');
-  await page.locator("xpath=//a[text()='Bank Project']").click();
-  await expect(page.locator("xpath=//a[text()='Demo Site']")).toBeVisible();
-  await page.locator("xpath=//input[@name='uid']").fill('mngr653719');
-  await page.locator("xpath=//input[@name='password']").fill('Unajaty');
-  await page.locator("xpath=//input[@name='btnLogin']").click();
-  await expect(page.locator("xpath=//marquee[@class='heading3']")).toBeVisible();
+  await page.locator("//a[text()='Bank Project']").click();
+  await expect(page.locator("//a[text()='Demo Site']")).toBeVisible();
+  await page.locator("//input[@name='uid']").fill('mngr653719');
+  await page.locator("//input[@name='password']").fill('Unajaty');
+  await page.locator("//input[@name='btnLogin']").click();
+  await expect(page.locator("//marquee[@class='heading3']")).toBeVisible();
   await expect(page).toHaveURL(/Managerhomepage/);
 });
 
 async function goToNewAccount(page: Page) {
-  await page.locator("xpath=//a[text()='New Account']").click();
+  await page.locator("//a[text()='New Account']").click();
 }
 
 async function fillCustomerId(page: Page, value: string) {
-  await page.locator("xpath=//input[@name='cusid']").fill(value);
+  await page.locator("//input[@name='cusid']").fill(value);
 }
 
 async function fillDeposit(page: Page, value: string) {
-  await page.locator("xpath=//input[@name='inideposit']").fill(value);
+  await page.locator("//input[@name='inideposit']").fill(value);
 }
 
 async function submitForm(page: Page) {
-  await page.locator("xpath=//input[@name='button2']").click();
+  await page.locator("//input[@name='button2']").click();
 }
 
 async function resetForm(page: Page) {
-  await page.locator("xpath=//input[@name='reset']").click();
+  await page.locator("//input[@name='reset']").click();
 }
 
 async function expectTextVisible(page: Page, text: string) {
-  await expect(page.locator(`xpath=//*[text()='${text}']`)).toBeVisible();
+  await expect(page.locator(`//*[text()='${text}']`)).toBeVisible();
 }
 
 async function expectFieldEmpty(page: Page, fieldName: string) {
-  await expect(page.locator(`xpath=//input[@name='${fieldName}']`)).toHaveValue('');
+  await expect(page.locator(`//input[@name='${fieldName}']`)).toHaveValue('');
 }
 
 test('Add account with valid Customer ID and deposit', async ({ page }) => {
@@ -66,7 +66,7 @@ test('Customer ID with alphabets', async ({ page }) => {
 test('Customer ID with non-existing ID', async ({ page }) => {
 
   await goToNewAccount(page);
-  await fillCustomerId(page, '99999999');
+  await fillCustomerId(page, '9999999999999999999999');
   await fillDeposit(page, '5000');
   await submitForm(page);
 });

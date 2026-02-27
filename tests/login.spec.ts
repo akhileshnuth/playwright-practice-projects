@@ -28,21 +28,21 @@ async function expectInvalidLoginAlert(page: Page) {
 
 test('Login with valid username and valid password', async ({ page }) => {
   await login(page, VALID_USERNAME, VALID_PASSWORD);
-  await expect(page.locator("xpath=//marquee[@class='heading3']")).toBeVisible();
+  await expect(page.locator("//marquee[@class='heading3']")).toBeVisible();
   await expect(page).toHaveURL(/Managerhomepage/);
 });
 
 test('Login with invalid username and valid password', async ({ page }) => {
-  await expectInvalidLoginAlert(page);
   await login(page, INVALID_USERNAME, VALID_PASSWORD);
+  await expectInvalidLoginAlert(page);
 });
 
 test('Login with valid username and invalid password', async ({ page }) => {
-  await expectInvalidLoginAlert(page);
   await login(page, VALID_USERNAME, INVALID_PASSWORD);
+  await expectInvalidLoginAlert(page);
 });
 
 test('Login with invalid username and invalid password', async ({ page }) => {
-  await expectInvalidLoginAlert(page);
   await login(page, INVALID_USERNAME, INVALID_PASSWORD);
+  await expectInvalidLoginAlert(page);
 });
