@@ -8,7 +8,9 @@ export class EditAccountPage {
     }
 
     async clickEditAccount() {
-        await this.page.locator("//a[@href='editAccount.php']").click({ force: true });
+        const editAccount = this.page.locator("//a[@href='editAccount.php']");
+        await editAccount.scrollIntoViewIfNeeded();
+        await editAccount.click({ force: true });
     }
 
     async enterAccountNumber(accountNo: string) {

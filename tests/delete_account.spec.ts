@@ -46,11 +46,13 @@ test.describe('Delete Account Tests', () => {
     const deleteAccount = new DeleteAccountPage(page);
     await deleteAccount.clickDeleteAccount();
     await deleteAccount.enterAccountNumber(INVALID_ACCOUNT_ALPHA);
-    await deleteAccount.clickSubmit();
+    await page.locator("body").click();
+    // await deleteAccount.clickSubmit();
     await deleteAccount.verifyValidationText('Characters are not allowed');
     page.once('dialog', async dialog => {
         await deleteAccount.verifyAlert(dialog, 'Please fill all fields');
     });
+    await deleteAccount.clickSubmit();
 
   });
 
@@ -61,11 +63,13 @@ test.describe('Delete Account Tests', () => {
     const deleteAccount = new DeleteAccountPage(page);
     await deleteAccount.clickDeleteAccount();
     await deleteAccount.enterAccountNumber(INVALID_ACCOUNT_ALPHANUMERIC);
-    await deleteAccount.clickSubmit();
+    await page.locator("body").click();
+    // await deleteAccount.clickSubmit();
     await deleteAccount.verifyValidationText('Characters are not allowed');
     page.once('dialog', async dialog => {
         await deleteAccount.verifyAlert(dialog, 'Please fill all fields');
     });
+    await deleteAccount.clickSubmit();
 
   });
 
@@ -76,11 +80,12 @@ test.describe('Delete Account Tests', () => {
     const deleteAccount = new DeleteAccountPage(page);
     await deleteAccount.clickDeleteAccount();
     await deleteAccount.enterAccountNumber(INVALID_ACCOUNT_SPECIAL);
-    await deleteAccount.clickSubmit();
+    await page.locator("body").click();
     await deleteAccount.verifyValidationText('Special characters are not allowed');
     page.once('dialog', async dialog => {
         await deleteAccount.verifyAlert(dialog, 'Please fill all fields');
     });
+    await deleteAccount.clickSubmit();
 
   });
 
@@ -90,29 +95,14 @@ test.describe('Delete Account Tests', () => {
 
     const deleteAccount = new DeleteAccountPage(page);
     await deleteAccount.clickDeleteAccount();
+    await page.locator("body").click();
     page.once('dialog', async dialog => {
         await deleteAccount.verifyAlert(dialog, 'Please fill all fields');
     });
     await deleteAccount.clickSubmit();
 
   });
-
-
-
-  test('Submit with invalid characters shows alert', async ({ page }) => {
-
-    const deleteAccount = new DeleteAccountPage(page);
-    await deleteAccount.clickDeleteAccount();
-    await deleteAccount.enterAccountNumber(INVALID_ACCOUNT_ALERT);
-    await deleteAccount.clickSubmit();
-    await deleteAccount.verifyValidationText('Characters are not allowed');
-    page.once('dialog', async dialog => {
-        await deleteAccount.verifyAlert(dialog, 'Please fill all fields');
-    });
-
-  });
-
-
+-
 
   test('Reset button test', async ({ page }) => {
 

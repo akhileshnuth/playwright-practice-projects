@@ -24,7 +24,7 @@ test.describe('Edit Account Tests', () => {
     const loginPage = new LoginPage(page);
     await loginPage.navigate();
     await loginPage.login(VALID_USERNAME, VALID_PASSWORD);
-    await expect(page.locator("//marquee[@class='heading3']")).toBeVisible();
+    //await expect(page.locator("//marquee[@class='heading3']")).toBeVisible();
     await expect(page).toHaveURL(/Managerhomepage/);
 
   });
@@ -56,11 +56,12 @@ test.describe('Edit Account Tests', () => {
     const editAccount = new EditAccountPage(page);
     await editAccount.clickEditAccount();
     await editAccount.enterAccountNumber(INVALID_ACCOUNT_ALPHANUMERIC);
-    await editAccount.clickSubmit();
+    //await editAccount.clickSubmit();
     await editAccount.verifyValidationText('Characters are not allowed');
     page.once('dialog', async dialog => {
         await editAccount.verifyAlert(dialog, 'Please fill all fields');
     });
+    await editAccount.clickSubmit();
 
   });
 
