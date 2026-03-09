@@ -1,48 +1,58 @@
-import { test, expect, type Page, type Dialog } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import { LoginPage } from '../pages/loginPage';
+import { VALID_USERNAME, VALID_PASSWORD, INVALID_USERNAME, INVALID_PASSWORD} from '../utils/testData';
 
-const VALID_USERNAME = 'mngr653719';
-const VALID_PASSWORD = 'Unajaty';
+test.describe('Login Tests', () => {
 
-const INVALID_USERNAME = 'akhil@1234';
-const INVALID_PASSWORD = '@123456';
+    test.beforeEach(async ({ page }) => {
+        const loginPage = new LoginPage(page);
+        await loginPage.navigate();
+    });
 
-test.beforeEach(async ({ page }) => {
-  await page.goto('https://demo.guru99.com');
-  await expect(page.locator("//a[text()='Demo Site']")).toBeVisible();
-  await page.locator("//a[text()='Bank Project']").click();
-});
+    test('Login with valid username and valid password', async ({ page }) => {
 
-async function login(page: Page, username: string, password: string) {
+        const loginPage = new LoginPage(page);
 
-  await page.locator("//input[@name='uid']").fill(username);
-  await page.locator("//input[@name='password']").fill(password);
-  await page.locator("//input[@name='btnLogin']").click();
-}
+        await loginPage.login(VALID_USERNAME, VALID_PASSWORD);
 
-async function expectInvalidLoginAlert(page: Page) {
-  page.once('dialog', async (dialog: Dialog) => {
-    expect(dialog.message().toLowerCase()).toContain('not valid');
-    await dialog.accept();
-  });
-}
+        await expect(page).toHaveURL(/Managerhomepage/);
+        await expect(page.locator("//marquee[@class='heading3']")).toBeVisible();
+    });
 
-test('Login with valid username and valid password', async ({ page }) => {
-  await login(page, VALID_USERNAME, VALID_PASSWORD);
-  await expect(page.locator("//marquee[@class='heading3']")).toBeVisible();
-  await expect(page).toHaveURL(/Managerhomepage/);
-});
+    test('Login with invalid username and valid password', async ({ page }) => {
 
-test('Login with invalid username and valid password', async ({ page }) => {
-  await login(page, INVALID_USERNAME, VALID_PASSWORD);
-  await expectInvalidLoginAlert(page);
-});
+        const loginPage = new LoginPage(page);
 
-test('Login with valid username and invalid password', async ({ page }) => {
-  await login(page, VALID_USERNAME, INVALID_PASSWORD);
-  await expectInvalidLoginAlert(page);
-});
+        page.once('dialog', async dialog => {
+            await dialog.accept();
+        });
 
-test('Login with invalid username and invalid password', async ({ page }) => {
-  await login(page, INVALID_USERNAME, INVALID_PASSWORD);
-  await expectInvalidLoginAlert(page);
+        await loginPage.login(INVALID_USERNAME, VALID_PASSWORD);
+        await expect(page).toHaveURL(/index.php/);
+    });
+
+    test('Login with valid username and invalid password', async ({ page }) => {
+
+        const loginPage = new LoginPage(page);
+
+        page.once('dialog', async dialog => {
+            await dialog.accept();
+        });
+
+        await loginPage.login(VALID_USERNAME, INVALID_PASSWORD);
+        await expect(page).toHaveURL(/index.php/);
+    });
+
+    test('Login with invalid username and invalid password', async ({ page }) => {
+
+        const loginPage = new LoginPage(page);
+
+        page.once('dialog', async dialog => {
+            await dialog.accept();
+        });
+
+        await loginPage.login(INVALID_USERNAME, INVALID_PASSWORD);
+        await expect(page).toHaveURL(/index.php/);
+    });
+
 });

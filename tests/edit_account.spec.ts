@@ -1,75 +1,114 @@
-import { test, expect, type Page, type Dialog } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
-test.beforeEach(async ({ page }) => {
+import { LoginPage } from '../pages/loginPage';
+import { EditAccountPage } from '../pages/EditAccountPage';
 
-  await page.goto('https://demo.guru99.com/V1/index.php');
-  await page.locator("//a[text()='Bank Project']").click();
-  await expect(page.locator("//a[text()='Demo Site']")).toBeVisible();
-  await page.locator("//input[@name='uid']").fill('mngr653719');
-  await page.locator("//input[@name='password']").fill('Unajaty');
-  await page.locator("//input[@name='btnLogin']").click();
-  await expect(page.locator("//marquee[@class='heading3']")).toBeVisible();
-});
+import { VALID_USERNAME, VALID_PASSWORD } from '../utils/testData';
 
-async function expectAlert(page: Page, expectedMessage: string) {
-  page.once('dialog', async (dialog: Dialog) => {
-    expect(dialog.message()).toContain(expectedMessage);
-    await dialog.accept();
+import {
+
+  VALID_ACCOUNT,
+  INVALID_ACCOUNT_ALPHA,
+  INVALID_ACCOUNT_ALPHANUMERIC,
+  INVALID_ACCOUNT_SPECIAL,
+  INVALID_ACCOUNT_ALERT,
+  EMPTY_ACCOUNT
+
+} from '../utils/editAccountTestData';
+
+
+test.describe('Edit Account Tests', () => {
+
+  test.beforeEach(async ({ page }) => {
+
+    const loginPage = new LoginPage(page);
+    await loginPage.navigate();
+    await loginPage.login(VALID_USERNAME, VALID_PASSWORD);
+    await expect(page.locator("//marquee[@class='heading3']")).toBeVisible();
+    await expect(page).toHaveURL(/Managerhomepage/);
+
   });
-}
 
-test('Account No with valid input', async ({ page }) => {
 
-  await page.locator("//a[@href='editAccount.php']").click({ force: true });
-  await page.locator("//input[@name='accountno']").fill('1234567890');
-  await page.locator("//input[@name='AccSubmit']").click();
-});
+  test('Account No with valid input', async ({ page }) => {
 
-test('Account No with only characters', async ({ page }) => {
+    const editAccount = new EditAccountPage(page);
+    await editAccount.clickEditAccount();
+    await editAccount.enterAccountNumber(VALID_ACCOUNT.accountNo);
+    await editAccount.clickSubmit();
 
-  await page.locator("//a[@href='editAccount.php']").click({ force: true });
-  await page.locator("//input[@name='accountno']").fill('bsbs');
-  await page.locator("//input[@name='AccSubmit']").click();
-  await expect(page.locator("//*[text()='Characters are not allowed']")).toBeVisible();
-});
+  });
 
-test('Account No with alphanumeric value', async ({ page }) => {
 
-  await page.locator("//a[@href='editAccount.php']").click({ force: true });
-  await page.locator("//input[@name='accountno']").fill('4343jdf');
-  await page.locator("//input[@name='AccSubmit']").click();
-  await expect(page.locator("//*[text()='Characters are not allowed']")).toBeVisible();
-  await expectAlert(page, 'Please fill all fields');
-});
+  test('Account No with only characters', async ({ page }) => {
 
-test('Account No with special characters', async ({ page }) => {
+    const editAccount = new EditAccountPage(page);
+    await editAccount.clickEditAccount();
+    await editAccount.enterAccountNumber(INVALID_ACCOUNT_ALPHA);
+    await editAccount.clickSubmit();
+    await editAccount.verifyValidationText('Characters are not allowed');
 
-  await page.locator("//a[@href='editAccount.php']").click({ force: true });
-  await page.locator("//input[@name='accountno']").fill('@#$457852');
-  await page.locator("//input[@name='AccSubmit']").click();
-  await expect(page.locator("//*[text()='Special characters are not allowed']")).toBeVisible();
-});
+  });
 
-test('Submit with empty account no shows alert', async ({ page }) => {
 
-  await page.locator("//a[@href='editAccount.php']").click({ force: true });
-  await page.locator("//input[@name='AccSubmit']").click();
-  await expectAlert(page, 'Please fill all fields');
-});
+  test('Account No with alphanumeric value', async ({ page }) => {
 
-test('Submit with invalid characters shows alert', async ({ page }) => {
+    const editAccount = new EditAccountPage(page);
+    await editAccount.clickEditAccount();
+    await editAccount.enterAccountNumber(INVALID_ACCOUNT_ALPHANUMERIC);
+    await editAccount.clickSubmit();
+    await editAccount.verifyValidationText('Characters are not allowed');
+    page.once('dialog', async dialog => {
+        await editAccount.verifyAlert(dialog, 'Please fill all fields');
+    });
 
-  await page.locator("//a[@href='editAccount.php']").click({ force: true });
-  await page.locator("//input[@name='accountno']").fill('gdfgch');
-  await page.locator("//input[@name='AccSubmit']").click();
-  await expect(page.locator("//*[text()='Characters are not allowed']")).toBeVisible();
-  await expectAlert(page, 'Please fill all fields');
-});
+  });
 
-test('Reset button test', async ({ page }) => {
 
-  await page.locator("//a[@href='editAccount.php']").click({ force: true });
-  await page.locator("//input[@name='accountno']").fill('123456');
-  await page.locator("//input[@name='res']").click();
-  await expect(page.locator("//input[@name='accountno']")).toHaveValue('');
+  test('Account No with special characters', async ({ page }) => {
+
+    const editAccount = new EditAccountPage(page);
+    await editAccount.clickEditAccount();
+    await editAccount.enterAccountNumber(INVALID_ACCOUNT_SPECIAL);
+    await editAccount.clickSubmit();
+    await editAccount.verifyValidationText('Special characters are not allowed');
+
+  });
+
+
+  test('Submit with empty account no shows alert', async ({ page }) => {
+
+    const editAccount = new EditAccountPage(page);
+    await editAccount.clickEditAccount();
+    page.once('dialog', async dialog => {
+        await editAccount.verifyAlert(dialog, 'Please fill all fields');
+    });
+    await editAccount.clickSubmit();
+
+  });
+
+
+  test('Submit with invalid characters shows alert', async ({ page }) => {
+
+    const editAccount = new EditAccountPage(page);
+    await editAccount.clickEditAccount();
+    await editAccount.enterAccountNumber(INVALID_ACCOUNT_ALERT);
+    await editAccount.clickSubmit();
+    await editAccount.verifyValidationText('Characters are not allowed');
+    page.once('dialog', async dialog => {
+        await editAccount.verifyAlert(dialog, 'Please fill all fields');
+    });
+
+  });
+
+
+  test('Reset button test', async ({ page }) => {
+
+    const editAccount = new EditAccountPage(page);
+    await editAccount.clickEditAccount();
+    await editAccount.enterAccountNumber('123456');
+    await editAccount.clickReset();
+    await editAccount.verifyAccountNumberCleared();
+  });
+
 });

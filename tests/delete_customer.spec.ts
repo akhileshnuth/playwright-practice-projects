@@ -1,85 +1,131 @@
-import { test, expect, type Page, type Dialog } from '@playwright/test';
+import { test, expect} from '@playwright/test';
+import { LoginPage } from '../pages/loginPage';
+import { DeleteCustomerPage } from '../pages/DeleteCustomerPage';
+import { VALID_USERNAME, VALID_PASSWORD } from '../utils/testData';
 
-test.beforeEach(async ({ page }) => {
+import {
+  VALID_CUSTOMER_ID,
+  VALID_CUSTOMER_ID_SHORT,
+  INVALID_CUSTOMER_ID_CHARACTERS,
+  INVALID_CUSTOMER_ID_ALPHANUMERIC,
+  INVALID_CUSTOMER_ID_SPECIAL,
+  EMPTY_CUSTOMER_ID
+} from '../utils/deleteCustomerData';
 
-  await page.goto('https://demo.guru99.com/V1/index.php');
-  await expect(page.locator("//a[text()='Demo Site']")).toBeVisible();
-  await page.locator("//a[text()='Bank Project']").click();
-  await page.locator("//input[@name='uid']").fill('mngr653719');
-  await page.locator("//input[@name='password']").fill('Unajaty');
-  await page.locator("//input[@name='btnLogin']").click();
-  await expect(page.locator("//marquee[@class='heading3']")).toBeVisible();
-});
+test.describe('Delete customer tests', () => {
 
-async function expectAlert(page: Page, expectedMessage: string) {
-  page.once('dialog', async (dialog: Dialog) => {
-    expect(dialog.message()).toContain(expectedMessage);
-    await dialog.accept();
+  test.beforeEach(async ({ page }) => {
+
+      const loginPage = new LoginPage(page);
+
+      await loginPage.navigate();
+      await loginPage.login(VALID_USERNAME, VALID_PASSWORD);
+
+      await expect(page).toHaveURL(/Managerhomepage/);
+      await expect(page.locator("//marquee[@class='heading3']")).toBeVisible();
+
+    });
+
+
+  test('Customer ID with valid input', async ({ page }) => {
+
+    const customer = new DeleteCustomerPage(page);
+
+    await customer.clickDeleteCustomer();
+    await customer.enterCustomerId(VALID_CUSTOMER_ID);
+    await customer.clickSubmit();
+
   });
-}
-
-test('Customer ID with valid input', async ({ page }) => {
-
-  await page.locator("//a[text()='Delete Customer']").click();
-  await page.locator("//input[@name='cusid']").fill('1234567890');
-  await page.locator("//input[@name='AccSubmit']").click();
-
-});
 
 
-test('Customer ID with only characters', async ({ page }) => {
+  test('Customer ID with only characters', async ({ page }) => {
 
-  await page.locator("//a[text()='Delete Customer']").click();
-  await page.locator("//input[@name='cusid']").fill('bsbs');
-  await page.locator("//input[@name='AccSubmit']").click();
-  await expect(page.locator("//*[text()='Characters are not allowed']")).toBeVisible();
-});
+    const customer = new DeleteCustomerPage(page);
+
+    await customer.clickDeleteCustomer();
+    await customer.enterCustomerId(INVALID_CUSTOMER_ID_CHARACTERS);
+    await customer.clickSubmit();
+
+    await customer.verifyCharactersNotAllowedMessage();
+
+  });
 
 
-test('Customer ID with alphanumeric value', async ({ page }) => {
+  test('Customer ID with alphanumeric value', async ({ page }) => {
 
-  await page.locator("//a[text()='Delete Customer']").click();
-  await page.locator("//input[@name='cusid']").fill('4343jdf');
-  await page.locator("//input[@name='AccSubmit']").click();
-  await expect(page.locator("//*[text()='Characters are not allowed']")).toBeVisible();
-});
+    const customer = new DeleteCustomerPage(page);
 
-test('Customer ID with special characters', async ({ page }) => {
+    await customer.clickDeleteCustomer();
+    await customer.enterCustomerId(INVALID_CUSTOMER_ID_ALPHANUMERIC);
+    await customer.clickSubmit();
 
-  await page.locator("//a[text()='Delete Customer']").click();
-  await page.locator("//input[@name='cusid']").fill('@#$457852');
-  await page.locator("//input[@name='AccSubmit']").click();
-  await expect(page.locator("//*[text()='Special characters are not allowed']")).toBeVisible();
-});
+    await customer.verifyCharactersNotAllowedMessage();
 
-test('Submit with empty customer id shows alert', async ({ page }) => {
+  });
 
-  await page.locator("//a[text()='Delete Customer']").click();
-  await page.locator("//input[@name='AccSubmit']").click();
-  await expectAlert(page, 'Please fill all fields');
-});
 
-test('Submit with invalid characters shows alert', async ({ page }) => {
+  test('Customer ID with special characters', async ({ page }) => {
 
-  await page.locator("//a[text()='Delete Customer']").click();
-  await page.locator("//input[@name='cusid']").fill('gdfgch');
-  await page.locator("//input[@name='AccSubmit']").click();
-  await expect(page.locator("//*[text()='Characters are not allowed']")).toBeVisible();
-  await expectAlert(page, 'Please fill all fields');
-});
+    const customer = new DeleteCustomerPage(page);
 
-test('Customer ID is required message', async ({ page }) => {
+    await customer.clickDeleteCustomer();
+    await customer.enterCustomerId(INVALID_CUSTOMER_ID_SPECIAL);
+    await customer.clickSubmit();
 
-  await page.locator("//a[text()='Delete Customer']").click();
-  await page.locator("//input[@name='cusid']").fill('');
-  await expect(page.locator("//*[text()='Customer ID is required']")).toBeVisible();
-  
-});
+    await customer.verifySpecialCharactersNotAllowedMessage();
 
-test('Reset button test', async ({ page }) => {
+  });
 
-  await page.locator("//a[text()='Delete Customer']").click();
-  await page.locator("//input[@name='cusid']").fill('123456');
-  await page.locator("//input[@name='res']").click();
-  await expect(page.locator("//input[@name='cusid']")).toHaveValue('');
+
+  test('Submit with empty customer id shows alert', async ({ page }) => {
+
+    const customer = new DeleteCustomerPage(page);
+    await customer.clickDeleteCustomer();
+    page.once('dialog', async dialog => {
+      await customer.verifyAlert(dialog, 'Please fill all fields');
+    });
+    await customer.clickSubmit();
+
+  });
+
+
+  test('Submit with invalid characters shows alert', async ({ page }) => {
+
+    const customer = new DeleteCustomerPage(page);
+
+    await customer.clickDeleteCustomer();
+    await customer.enterCustomerId(INVALID_CUSTOMER_ID_CHARACTERS);
+    await page.locator('body').click();
+    await customer.verifyCharactersNotAllowedMessage();
+    page.once('dialog', async dialog => {
+      await customer.verifyAlert(dialog, 'Please fill all fields');
+    });
+
+    await customer.clickSubmit();
+
+  });
+
+
+  test('Customer ID is required message', async ({ page }) => {
+
+    const customer = new DeleteCustomerPage(page);
+
+    await customer.clickDeleteCustomer();
+    await customer.enterCustomerId(EMPTY_CUSTOMER_ID);
+    await page.locator('body').click();
+    await customer.verifyCustomerIdRequiredMessage();
+
+  });
+
+
+  test('Reset button test', async ({ page }) => {
+
+    const customer = new DeleteCustomerPage(page);
+    await customer.clickDeleteCustomer();
+    await customer.enterCustomerId(VALID_CUSTOMER_ID_SHORT);
+    await customer.clickReset();
+    await customer.verifyCustomerIdCleared();
+
+  })
+
 });

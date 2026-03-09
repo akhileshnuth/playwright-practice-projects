@@ -1,77 +1,126 @@
-import { test, expect, type Page, type Dialog } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
-test.beforeEach(async ({ page }) => {
+import { LoginPage } from '../pages/loginPage';
+import { DeleteAccountPage } from '../pages/DeleteAccountPage';
 
-  await page.goto('https://demo.guru99.com/V1/index.php');
-  await page.locator("//a[text()='Bank Project']").click();
-  await expect(page.locator("//a[text()='Demo Site']")).toBeVisible();
-  await page.locator("//input[@name='uid']").fill('mngr653719');
-  await page.locator("//input[@name='password']").fill('Unajaty');
-  await page.locator("//input[@name='btnLogin']").click();
-  await expect(page.locator("//marquee[@class='heading3']")).toBeVisible();
-});
+import { VALID_USERNAME, VALID_PASSWORD } from '../utils/testData';
 
-async function expectAlert(page: Page, expectedMessage: string) {
-  page.once('dialog', async (dialog: Dialog) => {
-    expect(dialog.message()).toContain(expectedMessage);
-    await dialog.accept();
+import {
+
+  VALID_DELETE_ACCOUNT,
+  INVALID_ACCOUNT_ALPHA,
+  INVALID_ACCOUNT_ALPHANUMERIC,
+  INVALID_ACCOUNT_SPECIAL,
+  INVALID_ACCOUNT_ALERT,
+  EMPTY_ACCOUNT
+
+} from '../utils/deleteAccountTestData';
+
+
+test.describe('Delete Account Tests', () => {
+
+  test.beforeEach(async ({ page }) => {
+
+    const loginPage = new LoginPage(page);
+    await loginPage.navigate();
+    await loginPage.login(VALID_USERNAME, VALID_PASSWORD);
+    await expect(page.locator("//marquee[@class='heading3']")).toBeVisible();
+
   });
-}
 
-test('Account No with valid input', async ({ page }) => {
 
-  await page.locator("//a[text()='Delete Account']").click();
-  await page.locator("//input[@name='accountno']").fill('1234567890');
-  await page.locator("//input[@name='AccSubmit']").click();
-});
 
-test('Account No with only characters', async ({ page }) => {
+  test('Account No with valid input', async ({ page }) => {
 
-  await page.locator("//a[text()='Delete Account']").click();
-  await page.locator("//input[@name='accountno']").fill('bsbs');
-  await page.locator("//input[@name='AccSubmit']").click();
-  await expect(page.locator("//*[text()='Characters are not allowed']")).toBeVisible();
-  await expectAlert(page, 'Please fill all fields');
-});
+    const deleteAccount = new DeleteAccountPage(page);
+    await deleteAccount.clickDeleteAccount();
+    await deleteAccount.enterAccountNumber(VALID_DELETE_ACCOUNT.accountNo);
+    await deleteAccount.clickSubmit();
 
-test('Account No with alphanumeric value', async ({ page }) => {
+  });
 
-  await page.locator("//a[text()='Delete Account']").click();
-  await page.locator("//input[@name='accountno']").fill('4343jdf');
-  await page.locator("//input[@name='AccSubmit']").click();
-  await expect(page.locator("//*[text()='Characters are not allowed']")).toBeVisible();
-  await expectAlert(page, 'Please fill all fields');
-});
 
-test('Account No with special characters', async ({ page }) => {
 
-  await page.locator("//a[text()='Delete Account']").click();
-  await page.locator("//input[@name='accountno']").fill('@#$457852');
-  await page.locator("//input[@name='AccSubmit']").click();
-  await expect(page.locator("//*[text()='Special characters are not allowed']")).toBeVisible();
-  await expectAlert(page, 'Please fill all fields');
-});
+  test('Account No with only characters', async ({ page }) => {
 
-test('Submit with empty account number shows alert', async ({ page }) => {
+    const deleteAccount = new DeleteAccountPage(page);
+    await deleteAccount.clickDeleteAccount();
+    await deleteAccount.enterAccountNumber(INVALID_ACCOUNT_ALPHA);
+    await deleteAccount.clickSubmit();
+    await deleteAccount.verifyValidationText('Characters are not allowed');
+    page.once('dialog', async dialog => {
+        await deleteAccount.verifyAlert(dialog, 'Please fill all fields');
+    });
 
-  await page.locator("//a[text()='Delete Account']").click();
-  await page.locator("//input[@name='AccSubmit']").click();
-  await expectAlert(page, 'Please fill all fields');
-});
+  });
 
-test('Submit with invalid characters shows alert', async ({ page }) => {
 
-  await page.locator("//a[text()='Delete Account']").click();
-  await page.locator("//input[@name='accountno']").fill('gdfgch');
-  await page.locator("//input[@name='AccSubmit']").click();
-  await expect(page.locator("//*[text()='Characters are not allowed']")).toBeVisible();
-  await expectAlert(page, 'Please fill all fields');
-});
 
-test('Reset button test', async ({ page }) => {
+  test('Account No with alphanumeric value', async ({ page }) => {
 
-  await page.locator("//a[text()='Delete Account']").click();
-  await page.locator("//input[@name='accountno']").fill('123456');
-  await page.locator("//input[@name='res']").click();
-  await expect(page.locator("//input[@name='accountno']")).toHaveValue('');
+    const deleteAccount = new DeleteAccountPage(page);
+    await deleteAccount.clickDeleteAccount();
+    await deleteAccount.enterAccountNumber(INVALID_ACCOUNT_ALPHANUMERIC);
+    await deleteAccount.clickSubmit();
+    await deleteAccount.verifyValidationText('Characters are not allowed');
+    page.once('dialog', async dialog => {
+        await deleteAccount.verifyAlert(dialog, 'Please fill all fields');
+    });
+
+  });
+
+
+
+  test('Account No with special characters', async ({ page }) => {
+
+    const deleteAccount = new DeleteAccountPage(page);
+    await deleteAccount.clickDeleteAccount();
+    await deleteAccount.enterAccountNumber(INVALID_ACCOUNT_SPECIAL);
+    await deleteAccount.clickSubmit();
+    await deleteAccount.verifyValidationText('Special characters are not allowed');
+    page.once('dialog', async dialog => {
+        await deleteAccount.verifyAlert(dialog, 'Please fill all fields');
+    });
+
+  });
+
+
+
+  test('Submit with empty account number shows alert', async ({ page }) => {
+
+    const deleteAccount = new DeleteAccountPage(page);
+    await deleteAccount.clickDeleteAccount();
+    page.once('dialog', async dialog => {
+        await deleteAccount.verifyAlert(dialog, 'Please fill all fields');
+    });
+    await deleteAccount.clickSubmit();
+
+  });
+
+
+
+  test('Submit with invalid characters shows alert', async ({ page }) => {
+
+    const deleteAccount = new DeleteAccountPage(page);
+    await deleteAccount.clickDeleteAccount();
+    await deleteAccount.enterAccountNumber(INVALID_ACCOUNT_ALERT);
+    await deleteAccount.clickSubmit();
+    await deleteAccount.verifyValidationText('Characters are not allowed');
+    page.once('dialog', async dialog => {
+        await deleteAccount.verifyAlert(dialog, 'Please fill all fields');
+    });
+
+  });
+
+
+
+  test('Reset button test', async ({ page }) => {
+
+    const deleteAccount = new DeleteAccountPage(page);
+    await deleteAccount.clickDeleteAccount();
+    await deleteAccount.enterAccountNumber('123456');
+    await deleteAccount.clickReset();
+    await deleteAccount.verifyAccountNumberCleared();
+  });
+
 });

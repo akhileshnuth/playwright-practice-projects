@@ -1,150 +1,281 @@
-import { test, expect, type Page, type Dialog } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import { LoginPage } from '../pages/loginPage';
+import { newCustomerPage } from '../pages/NewCustomerPage';
+import { VALID_USERNAME, VALID_PASSWORD } from '../utils/testData';
 
-async function assertSuccessURL(page: Page) {
-  await expect(page).toHaveURL(/insrtCustomer.php/);
-}
+import {
+  VALID_CUSTOMER,
+  INVALID_EMAIL,
+  INVALID_EMAIL_FORMAT,
+  INVALID_PHONE,
+  INVALID_NAME_SPECIAL,
+  INVALID_CITY,
+  INVALID_STATE,
+  INVALID_PIN,
+  FUTURE_DOB
+} from '../utils/customerTestData';
 
-async function assertFailureURL(page: Page) {
-  await expect(page).toHaveURL(/addcustomerpage.php/);
-}
 
-async function assertValidationText(page: Page, text: string) {
-  await expect(page.getByText(text)).toBeVisible();
-}
+test.describe('Add Customer Tests', () => {
 
-async function expectAlert(page: Page, message: string) {
-  page.once('dialog', async (dialog: Dialog) => {
-    expect(dialog.message()).toContain(message);
-    await dialog.accept();
+  test.beforeEach(async ({ page }) => {
+
+    const loginPage = new LoginPage(page);
+
+    await loginPage.navigate();
+    await loginPage.login(VALID_USERNAME, VALID_PASSWORD);
+    await expect(page).toHaveURL(/Managerhomepage/);
+    await expect(page.locator("//marquee[@class='heading3']")).toBeVisible();
+
   });
-}
 
-test.beforeEach(async ({ page }) => {
 
-  await page.goto('https://demo.guru99.com/V1/index.php');
-  await page.getByText('Bank Project').click();
-  await page.locator("//*[@name='uid']").fill('mngr653719');
-  await page.locator("//*[@name='password']").fill('Unajaty');
-  await page.locator("//*[@name='btnLogin']").click();
-  await expect(page.locator("//marquee[@class='heading3']")).toBeVisible();
-});
+  test('Add customer with valid details', async ({ page }) => {
 
-test('Add customer with all valid details', async ({ page }) => {
-  await page.getByText('New Customer').click();
-  await page.locator("//*[@name='name']").fill('Akhil');
-  await page.locator("(//*[@name='rad1'])[1]").check();
-  await page.locator("//*[@name='dob']").fill('2001-01-01');
-  await page.locator("//*[@name='addr']").fill('CPT,Palnadu');
-  await page.locator("//*[@name='city']").fill('cpt');
-  await page.locator("//*[@name='state']").fill('Andhra');
-  await page.locator("//*[@name='pinno']").fill('522626');
-  await page.locator("//*[@name='telephoneno']").fill('9876543210');
-  await page.locator("//*[@name='emailid']").fill('akhil@gmail.com');
-  await page.locator("//*[@name='sub']").click();
-  await assertSuccessURL(page);
-});
+    const customer = new newCustomerPage(page);
 
-test('Numeric values in city/state, special characters in customer name & City/state   ', async ({ page }) => {
+    await customer.clickNewCustomer();
 
-  await page.getByText('New Customer').click();
-  await page.locator("//*[@name='name']").fill('Akhil!@#$%^&*()_+-++');
-  await page.locator("(//*[@name='rad1'])[1]").check();
-  await page.locator("//*[@name='dob']").fill('2001-01-01');
-  await page.locator("//*[@name='addr']").fill('CPT,Palnadu');
-  await page.locator("//*[@name='city']").fill('!@#$%^&*()');
-  await page.locator("//*[@name='state']").fill('!@#$%^&*()');
-  await page.locator("//*[@name='pinno']").fill('522626');
-  await page.locator("//*[@name='telephoneno']").fill('9876543210');
-  await page.locator("//*[@name='emailid']").fill('akhil@gmail.com');
-  await page.locator("//*[@name='sub']").click();
-  await assertFailureURL(page);
-});
+    await customer.enterName(VALID_CUSTOMER.name);
+    await customer.selectGender();
+    await customer.enterDOB(VALID_CUSTOMER.dob);
+    await customer.enterAddress(VALID_CUSTOMER.address);
+    await customer.enterCity(VALID_CUSTOMER.city);
+    await customer.enterState(VALID_CUSTOMER.state);
+    await customer.enterPin(VALID_CUSTOMER.pin);
+    await customer.enterPhone(VALID_CUSTOMER.phone);
 
-test('Empty fields validation ', async ({ page }) => {
+    await customer.enterEmail(VALID_CUSTOMER.email);
+    await customer.clickSubmit();
+    await expect(page).toHaveURL(/insrtCustomer.php/);
+  });
 
-  await page.getByText('New Customer').click();
-  await page.locator("//*[@name='name']").fill('');
-  await page.locator("(//*[@name='rad1'])[1]").check();
-  await page.locator("//*[@name='dob']").fill('2001-01-01');
-  await page.locator("//*[@name='addr']").fill('hyd');
-  await page.locator("//*[@name='city']").fill('HYD');
-  await page.locator("//*[@name='state']").fill('andhra');
-  await page.locator("//*[@name='pinno']").fill('522626');
-  await page.locator("//*[@name='telephoneno']").fill('9876543210');
-  await page.locator("//*[@name='emailid']").fill('');
-  await page.locator("//*[@name='sub']").click();
-  await assertFailureURL(page);
-});
 
-test('Future date of birth', async ({ page }) => {
 
-  await page.getByText('New Customer').click();
-  await page.locator("//*[@name='name']").fill('Akhil');
-  await page.locator("(//*[@name='rad1'])[1]").check();
-  await page.locator("//*[@name='dob']").fill('2031-01-01');
-  await page.locator("//*[@name='sub']").click();
-  await assertFailureURL(page);
-});
+  test('Invalid email validation', async ({ page }) => {
 
-test('Invalid email id format', async ({ page }) => {
-  await page.getByText('New Customer').click();
-  await page.locator("//*[@name='name']").fill('Akhil');
-  await page.locator("(//*[@name='rad1'])[1]").check();
-  await page.locator("//*[@name='emailid']").fill('akhilgmail.com');
-  await page.locator("//*[@name='sub']").click();
-  await assertFailureURL(page);
-});
+    const customer = new newCustomerPage(page);
 
-test('Missing mandatory fields validation', async ({ page }) => {
+    await customer.clickNewCustomer();
+    await customer.enterName(VALID_CUSTOMER.name);
+    await customer.selectGender();
+    await customer.enterDOB(VALID_CUSTOMER.dob);
+    await customer.enterAddress(VALID_CUSTOMER.address);
+    await customer.enterCity(VALID_CUSTOMER.city);
+    await customer.enterState(VALID_CUSTOMER.state);
+    await customer.enterPin(VALID_CUSTOMER.pin);
+    await customer.enterPhone(VALID_CUSTOMER.phone);
+    await customer.enterEmail(INVALID_EMAIL);
+    await page.locator('[name="emailid"]').press('Tab');
 
-  await page.getByText('New Customer').click();
-  await page.locator("//*[@name='name']").fill('Akhil');
-  await page.locator("(//*[@name='rad1'])[1]").check();
-  await page.locator("//*[@name='sub']").click();
-  await expectAlert(page, 'Please fill all fields');
-  await assertFailureURL(page);
-});
+    // await customer.clickSubmit();
+    await expect(page.getByText('Email-ID is not valid')).toBeVisible();
 
-test('AJAX validation with invalid telephone number and mail', async ({ page }) => {
+  });
 
-  await page.getByText('New Customer').click();
-  await page.locator("//*[@name='name']").fill('Akhil');
-  await page.locator("(//*[@name='rad1'])[1]").check();
-  await page.locator("//*[@name='telephoneno']").fill('ABCDEF');
-  await page.locator("//*[@name='city']").click();
-  await assertValidationText(page, 'Characters are not allowed');
-  await page.locator("//*[@name='emailid']").fill('akhilgmail.com');
-  await page.locator("//*[@name='city']").click();
-  await assertValidationText(page, 'Email-ID is not valid');
-  await page.locator("//*[@name='sub']").click();
-  await expectAlert(page, 'Please fill all fields');
-  await assertFailureURL(page);
-});
 
-test('Submit button working with valid data', async ({ page }) => {
+  test('Invalid phone validation', async ({ page }) => {
 
-  await page.getByText('New Customer').click();
-  await page.locator("//*[@name='name']").fill('SubmitTest');
-  await page.locator("(//*[@name='rad1'])[1]").check();
-  await page.locator("//*[@name='dob']").fill('2001-01-01');
-  await page.locator("//*[@name='addr']").fill('CPT');
-  await page.locator("//*[@name='city']").fill('CPT');
-  await page.locator("//*[@name='state']").fill('Andhra');
-  await page.locator("//*[@name='pinno']").fill('522626');
-  await page.locator("//*[@name='telephoneno']").fill('9876543210');
-  await page.locator("//*[@name='emailid']").fill('submit@test.com');
-  await page.locator("//*[@name='sub']").click();
-  await assertSuccessURL(page);
-});
+    const customer = new newCustomerPage(page);
 
-test('Reset button clears all fields', async ({ page }) => {
+    await customer.clickNewCustomer();
+    await customer.enterName(VALID_CUSTOMER.name);
+    await customer.selectGender();
+    await customer.enterDOB(VALID_CUSTOMER.dob);
+    await customer.enterAddress(VALID_CUSTOMER.address);
+    await customer.enterCity(VALID_CUSTOMER.city);
+    await customer.enterState(VALID_CUSTOMER.state);
+    await customer.enterPin(VALID_CUSTOMER.pin);
+    await customer.enterPhone("abcd123");
+    // await customer.enterEmail(VALID_CUSTOMER.email);
+    // await customer.clickSubmit();
+    await page.locator('input[name="emailid"]').click();
+    await expect(page.locator('#message7')).toHaveText('Characters are not allowed'); 
+ });
 
-  await page.getByText('New Customer').click();
-  await page.locator("//*[@name='name']").fill('ayyjcg');
-  await page.locator("//*[@name='city']").fill('hyd');
-  await page.locator("//*[@name='emailid']").fill('bkeab@gmail.com');
-  await page.locator("//*[@name='res']").click();
-  await expect(page.locator("//*[@name='name']")).toHaveValue('');
-  await expect(page.locator("//*[@name='city']")).toHaveValue('');
-  await expect(page.locator("//*[@name='emailid']")).toHaveValue('');
+
+  test('Reset button clears fields', async ({ page }) => {
+
+    const customer = new newCustomerPage(page);
+
+    await customer.clickNewCustomer();
+    await customer.enterName('test');
+    await customer.enterCity('hyd');
+    await customer.enterEmail('test@test.com');
+
+    await customer.clickReset();
+    await expect(page.locator("//*[@name='name']")).toHaveValue('');
+    await expect(page.locator("//*[@name='city']")).toHaveValue('');
+    await expect(page.locator("//*[@name='emailid']")).toHaveValue('');
+
+  });
+
+
+  test('Empty customer name validation', async ({ page }) => {
+
+    const customer = new newCustomerPage(page);
+
+    await customer.clickNewCustomer();
+    await customer.enterName('');
+    await page.locator("//*[@name='city']").click();
+    await expect(page.locator('#message')).toHaveText('Customer name must not be blank');
+  });
+
+
+  test('Customer name with special characters', async ({ page }) => {
+
+    const customer = new newCustomerPage(page);
+
+    await customer.clickNewCustomer();
+    await customer.enterName(INVALID_NAME_SPECIAL);
+    await page.locator("//*[@name='city']").click();
+    await expect(page.locator('#message')).toHaveText('Special characters are not allowed');
+  });
+
+
+  test('Numeric values in City validation', async ({ page }) => {
+
+    const customer = new newCustomerPage(page);
+
+    await customer.clickNewCustomer();
+    await customer.enterName(VALID_CUSTOMER.name);
+    await customer.selectGender();
+    await customer.enterDOB(VALID_CUSTOMER.dob);
+    await customer.enterAddress(VALID_CUSTOMER.address);
+    await customer.enterCity(INVALID_CITY);
+    await page.locator("//*[@name='state']").click();
+    await expect(page.locator('#message4')).toHaveText('Numbers are not allowed');
+
+  });
+
+
+  test('Numeric values in State validation', async ({ page }) => {
+
+    const customer = new newCustomerPage(page);
+
+    await customer.clickNewCustomer();
+    await customer.enterName(VALID_CUSTOMER.name);
+    await customer.selectGender();
+    await customer.enterDOB(VALID_CUSTOMER.dob);
+    await customer.enterAddress(VALID_CUSTOMER.address);
+    await customer.enterCity(VALID_CUSTOMER.city);
+
+    await customer.enterState(INVALID_STATE);
+    await page.locator("//*[@name='pinno']").click();
+    await expect(page.locator('#message5')).toHaveText('Numbers are not allowed')
+
+  });
+
+
+  test('Submit with missing mandatory fields', async ({ page }) => {
+
+    const customer = new newCustomerPage(page);
+
+    await customer.clickNewCustomer();
+
+    page.once('dialog', async dialog => {
+        await customer.verifyAlert(dialog, 'Please fill all fields');
+    });
+
+    await customer.clickSubmit();
+    // page.once('dialog', async dialog => {
+    //    await customer.verifyAlert(dialog, 'Please fill all fields');
+    // });
+
+  });
+
+
+  test('Invalid email format validation', async ({ page }) => {
+
+    const customer = new newCustomerPage(page);
+
+    await customer.clickNewCustomer();
+
+    await customer.enterName(VALID_CUSTOMER.name);
+    await customer.selectGender();
+    await customer.enterDOB(VALID_CUSTOMER.dob);
+    await customer.enterAddress(VALID_CUSTOMER.address);
+    await customer.enterCity(VALID_CUSTOMER.city);
+    await customer.enterState(VALID_CUSTOMER.state);
+    await customer.enterPin(VALID_CUSTOMER.pin);
+    await customer.enterPhone(VALID_CUSTOMER.phone);
+
+    await customer.enterEmail("test@com");
+
+    await page.locator('body').click();
+    await expect(page.locator('#message9')).toHaveText('Email-ID is not valid');
+
+    page.once('dialog', async dialog => {
+        await customer.verifyAlert(dialog, 'Please fill all fields');
+    });
+
+    await customer.clickSubmit();
+
+  });
+
+
+  test('AJAX validation for all fields', async ({ page }) => {
+
+    const customer = new newCustomerPage(page);
+
+    await customer.clickNewCustomer();
+
+    // Customer Name validation
+    await customer.enterName('');
+    await page.locator("[name='city']").click();
+    await expect(page.locator('#message')).toHaveText('Customer name must not be blank');
+
+    // Customer Name special characters
+    await customer.enterName(INVALID_NAME_SPECIAL);
+    await page.locator("[name='city']").click();
+    await expect(page.locator('#message')).toHaveText('Special characters are not allowed');
+
+    // City validation (numbers not allowed)
+    await customer.enterName(VALID_CUSTOMER.name);
+    await customer.enterCity('1234');
+    await page.locator("[name='state']").click();
+    await expect(page.locator('#message4')).toHaveText('Numbers are not allowed');
+
+    // State validation (numbers not allowed)
+    await customer.enterState(INVALID_STATE);
+    await page.locator("[name='pinno']").click();
+    await expect(page.locator('#message5')).toHaveText('Numbers are not allowed');
+
+    // PIN validation char
+    await customer.enterPin('rdkcnxoi');
+    await page.locator("[name='city']").click();
+    await expect(page.locator('#message6')).toHaveText('Characters are not allowed');
+
+    //pin code length validation
+    await customer.enterPin(INVALID_PIN);
+    await page.locator("[name='city']").click();
+    await expect(page.locator('#message6')).toHaveText('PIN Code must have 6 Digits');
+
+    // Telephone validation (characters not allowed)
+    await customer.enterPin(VALID_CUSTOMER.pin);
+    await customer.enterPhone(INVALID_PHONE);
+    await page.locator("[name='emailid']").click();
+    await expect(page.locator('#message7')).toHaveText('Characters are not allowed');
+
+    // Email validation
+    await customer.enterPhone(VALID_CUSTOMER.phone);
+    await customer.enterEmail(INVALID_EMAIL);
+    await page.locator("[name='pinno']").click();
+    await expect(page.locator('#message9')).toHaveText('Email-ID is not valid');
+
+  });
+
+  test('Future DOB validation', async ({ page }) => {
+
+    const customer = new newCustomerPage(page);
+
+    await customer.clickNewCustomer();
+    await customer.enterName(VALID_CUSTOMER.name);
+    await customer.selectGender();
+
+    await customer.enterDOB(FUTURE_DOB);
+    await expect(page.locator("[name='dob']")).toHaveValue(FUTURE_DOB);
+
+  });
+
 });

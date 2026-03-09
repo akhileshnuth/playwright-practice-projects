@@ -1,81 +1,77 @@
-import { test, expect, type Page, type Dialog } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
-test.beforeEach(async ({ page }) => {
+import { LoginPage } from '../pages/loginPage';
+import { MiniStatementPage } from '../pages/MiniStatementPage';
 
-  await page.goto('https://demo.guru99.com/V1/index.php');
-  await expect(page.locator("//a[text()='Demo Site']")).toBeVisible();
-  await page.locator("//a[text()='Bank Project']").click();
-  await page.locator("//input[@name='uid']").fill('mngr653719');
-  await page.locator("//input[@name='password']").fill('Unajaty');
-  await page.locator("//input[@name='btnLogin']").click();
-  await expect(page.locator("//marquee[@class='heading3']")).toBeVisible();
-  await expect(page).toHaveURL(/Managerhomepage/);
-});
+import { VALID_USERNAME, VALID_PASSWORD } from '../utils/testData';
 
-async function goToMiniStatement(page: Page) {
-  await page.locator("//a[text()='Mini Statement']").click();
-}
+import {
+  VALID_MINI_STATEMENT,
+  EMPTY_ACCOUNT,
+  INVALID_ACCOUNT_ALPHA,
+  INVALID_ACCOUNT_SPECIAL
+} from '../utils/miniStatementTestData';
 
-async function fillAccountNo(page: Page, value: string) {
-  await page.locator("//input[@name='accountno']").fill(value);
-  await page.locator("body").click();
-}
 
-async function submitForm(page: Page) {
-  await page.locator("//input[@name='AccSubmit']").click();
-}
+test.describe('Mini Statement Tests', () => {
 
-async function resetForm(page: Page) {
-  await page.locator("//input[@name='res']").click();
-}
+  test.beforeEach(async ({ page }) => {
 
-async function expectAlert(page: Page, expectedMessage: string) {
-  page.once('dialog', async (dialog: Dialog) => {
-    expect(dialog.message()).toContain(expectedMessage);
-    await dialog.accept();
+    const loginPage = new LoginPage(page);
+    await loginPage.navigate();
+    await loginPage.login(VALID_USERNAME, VALID_PASSWORD);
+    await expect(page.locator("//marquee[@class='heading3']")).toBeVisible();
+    await expect(page).toHaveURL(/Managerhomepage/);
   });
-}
 
-async function expectValidationMessage(page: Page, keyword: string) {
-  await expect(page.locator(`//label[starts-with(@id,'message') and contains(text(),'${keyword}')]`)).toBeVisible();
-}
 
-async function expectFieldEmpty(page: Page) {
-  await expect(page.locator("//input[@name='accountno']")).toHaveValue('');
-}
 
-test('Opening mini statement with valid account number', async ({ page }) => {
+  test('Opening mini statement with valid account number', async ({ page }) => {
 
-  await goToMiniStatement(page);
-  await fillAccountNo(page, '123456');
-  await submitForm(page);
-});
+    const miniStatement = new MiniStatementPage(page);
+    await miniStatement.clickMiniStatement();
+    await miniStatement.enterAccountNumber(VALID_MINI_STATEMENT.accountNo);
+    await miniStatement.clickSubmit();
+  });
 
-test('Opening mini statement with empty account number', async ({ page }) => {
 
-  await goToMiniStatement(page);
-  await submitForm(page);
-  await expectAlert(page, 'Please fill all fields');
-});
 
-test('Opening mini statement with alphabets in account number', async ({ page }) => {
+  test('Opening mini statement with empty account number', async ({ page }) => {
 
-  await goToMiniStatement(page);
-  await fillAccountNo(page, 'qwert');
-  await expectValidationMessage(page, 'Characters are not allowed');
-});
+    const miniStatement = new MiniStatementPage(page);
+    await miniStatement.clickMiniStatement();
+    page.once('dialog', async dialog => {
+        await miniStatement.verifyAlert(dialog, 'Please fill all fields');
+    });
+    await miniStatement.clickSubmit();
+  });
 
-test('Opening mini statement with special characters in account number', async ({ page }) => {
 
-  await goToMiniStatement(page);
-  await fillAccountNo(page, '@#$%');
-  await expectValidationMessage(page, 'Special characters are not allowed');
-});
 
-test('Reset button clears account number field', async ({ page }) => {
+  test('Opening mini statement with alphabets in account number', async ({ page }) => {
 
-  await goToMiniStatement(page);
-  await fillAccountNo(page, '123456');
-  await resetForm(page);
-  await expectFieldEmpty(page);
+    const miniStatement = new MiniStatementPage(page);
+    await miniStatement.clickMiniStatement();
+    await miniStatement.enterAccountNumber(INVALID_ACCOUNT_ALPHA);
+    await miniStatement.verifyValidationMessage('Characters are not allowed');
+  });
+
+  test('Opening mini statement with special characters in account number', async ({ page }) => {
+
+    const miniStatement = new MiniStatementPage(page);
+    await miniStatement.clickMiniStatement();
+    await miniStatement.enterAccountNumber(INVALID_ACCOUNT_SPECIAL);
+    await miniStatement.verifyValidationMessage('Special characters are not allowed');
+
+  });
+
+  test('Reset button clears account number field', async ({ page }) => {
+
+    const miniStatement = new MiniStatementPage(page);
+    await miniStatement.clickMiniStatement();
+    await miniStatement.enterAccountNumber(VALID_MINI_STATEMENT.accountNo);
+    await miniStatement.clickReset();
+    await miniStatement.verifyAccountNumberCleared();
+  });
+
 });
